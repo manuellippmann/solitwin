@@ -17,7 +17,7 @@ To make things easier, I'm using the [PlatformIO](https://platformio.org) IDE to
 
   * Head Unit: [Arduino Yun](https://store.arduino.cc/arduino-yun)
   * Compass + Accelorometer: [Adafruit LSM303](https://www.adafruit.com/product/1120)
-  * Magsensor (Windvane): [Adafruit MLX90393]https://www.adafruit.com/product/4022
+  * Magsensor (Windvane): [Adafruit MLX90393](https://www.adafruit.com/product/4022)
   * Battery (Arduino): [Anker Powercore 10000](https://www.anker.com/de/products/variant/powercore-10000/A1263011)
   * Battery (Servos & Sensors): [BAKTH 7.2V 4500mAh NiMH](https://www.amazon.de/gp/product/B0797PF744/ref=ppx_yo_dt_b_asin_title_o03_s00?ie=UTF8&psc=1)
   * RC Receiver: [V710 2.4G 7CH Receiver](https://www.banggood.com/V710-2_4G-7CH-Receiver-for-Spektrum-Storm-G152-DSMX-DSM2-RC-Drone-FPV-Racing-Multi-Rotor-p-1432827.html?rmmds=buy&cur_warehouse=CN)
