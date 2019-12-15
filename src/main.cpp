@@ -1,3 +1,4 @@
+// INCLUDE LIBRARIES
 #include <Arduino.h>
 #include <Servo.h>
 #include <Wire.h>
@@ -5,9 +6,11 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM303_U.h>
 
+// DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
 Adafruit_LSM303_Mag_Unified MagSensor = Adafruit_LSM303_Mag_Unified();
 
+// DEFINE SERVOS
 Servo sailServo;
 Servo rudderServo;
 
@@ -75,15 +78,20 @@ int calcMagZ(int data);
 
 void setup()
 {
+  // INIT SERIAL TO DEBUG
   Serial.begin(9600);
+  // INIT DATA IN
   pinMode(sailIn, INPUT);
   pinMode(rudderIn, INPUT);
   pinMode(switch_A_In, INPUT);
   pinMode(switch_D_In, INPUT);
+  // INIT SERVOS
   sailServo.attach(sailOut);
   rudderServo.attach(rudderOut);
+  // INIT WINDSENSOR
   WindSensor.begin();
 
+  //INIT SMOOTHING
   for (int thisReading = 0; thisReading < numReadings; thisReading++)
   {
     sReadings[thisReading] = 0;
@@ -93,16 +101,17 @@ void setup()
 
 void loop()
 {
+  // check for receiver values and set current switch positions
   updateSwitches();
 
   if (switch_A == 0)
-  { // autonomous section
+  { // AUTONOMOUS SECTION
     calcWindData();
     if (switch_D == 0)
     { // AM WIND
       if (windDirection > 30 && windDirection < 60)
       {
-        rudderServo.write(98); // center
+        rudderServo.write(98); // center rudder
         sailServo.write(50);   // TODO: CHECK SAIL SERVO VALUES!!!
 
         Serial.println("Am Wind SRAIGHT");
@@ -237,10 +246,8 @@ void loop()
     }
   }
   else if (switch_A == 1)
-  { // manual section
-
-    //getCompassDir();
-
+  { // MANUAL MODE
+    calcWindData();
     sailServo.write(calcSailServo());
     rudderServo.write(calcRudderServo());
     calcWindData();
@@ -261,7 +268,9 @@ void loop()
 
 void updateSwitches()
 {
+  // get input data for switch A
   switch_A_data = (pulseIn(switch_A_In, HIGH)) - 1000;
+  // set switch A value
   if (switch_A_data > 500)
   {
     switch_A = 0;
@@ -271,7 +280,9 @@ void updateSwitches()
     switch_A = 1;
   }
 
+  // get input data for switch D
   switch_D_data = (pulseIn(switch_D_In, HIGH)) - 1000;
+  // set switch D data
   if (switch_D_data > 600)
   {
     switch_D = 0;
@@ -288,8 +299,10 @@ void updateSwitches()
 
 void calcWindData()
 {
+  // read data from windsensor, store in variables: &xData, &yData, &zData
   WindSensor.readData(&xData, &yData, &zData);
 
+  // read y curve to determine the side the wind is coming from, set windSide
   if (calcMagY(yData) < 0)
   {
     windSide = 's';
@@ -299,12 +312,14 @@ void calcWindData()
     windSide = 'b';
   }
 
+  // calculate wind direction between 0 deg and 180 deg, set to windDirection
   windDirection = calcMagZ(zData);
   windDirection = (1 - ((windDirection - 560) / 715)) * 180;
 };
 
 void getCompassDir()
 {
+  // get magsensor data
   sensors_event_t event;
   MagSensor.getEvent(&event);
 
@@ -324,6 +339,7 @@ void getCompassDir()
 
 int luffUp(float amount)
 {
+  // amount is between 0 and 1
   int servoData;
   //check which side the wind is coming from to determine which direction luffing up is
   if (windSide == 's')
@@ -334,11 +350,13 @@ int luffUp(float amount)
   { //wind from port
     servoData = 98 + (32 * amount);
   }
+  // return number to set servo
   return servoData;
 }
 
 int bearAway(float amount)
 {
+  // amount is between 0 and 1
   int servoData;
   //check which side the wind is coming from to determine which direction bearing away is
   if (windSide == 's')
@@ -349,14 +367,17 @@ int bearAway(float amount)
   { //wind from port
     servoData = 98 - (43 * amount);
   }
+  // return number to set servo
   return servoData;
 }
 
 int calcSailServo()
 {
+  // get input of receiver, calc data
   throttleSensData = (pulseIn(sailIn, HIGH)) - 1000;
   throttleData = constrain(throttleSensData / 10, 0, 1000) * 1.8;
 
+  // smooth data, the last 15 values are added and a median is found
   sTotal = sTotal - sReadings[sReadIndex];
   sReadings[sReadIndex] = throttleData;
   sTotal = sTotal + sReadings[sReadIndex];
@@ -368,14 +389,17 @@ int calcSailServo()
   }
 
   sAverage = sTotal / numReadings;
+  // return data to set servo, limit between 0 and 180 deg
   return constrain(sAverage, 0, 180);
 }
 
 int calcRudderServo()
 {
+  // get input of receiver, calc data
   rudderSensData = (pulseIn(rudderIn, HIGH)) - 1000;
   rudderData = constrain(rudderSensData / 10, 0, 1000) * 1.8;
 
+  // smooth data, the last 15 values are added and a median is found
   rTotal = rTotal - rReadings[rReadIndex];
   rReadings[rReadIndex] = rudderData;
   rTotal = rTotal + rReadings[rReadIndex];
@@ -387,12 +411,13 @@ int calcRudderServo()
   }
 
   rAverage = rTotal / numReadings;
+  // return data to set servo, limit between 0 and 180 deg
   return constrain(rAverage, 0, 180);
 }
 
 int calcMagY(int data)
 {
-
+  // smooth MagY data, the last 15 values are added and a median is found
   magyTotal = magyTotal - magyReadings[magyReadIndex];
   magyReadings[magyReadIndex] = data;
   magyTotal = magyTotal + magyReadings[magyReadIndex];
@@ -409,7 +434,7 @@ int calcMagY(int data)
 
 int calcMagZ(int data)
 {
-
+  // smooth MagZ data, the last 15 values are added and a median is found
   magzTotal = magzTotal - magzReadings[magzReadIndex];
   magzReadings[magzReadIndex] = data;
   magzTotal = magzTotal + magzReadings[magzReadIndex];
