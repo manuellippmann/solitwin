@@ -8,7 +8,8 @@
 
 // DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
-Adafruit_LSM303_Mag_Unified MagSensor = Adafruit_LSM303_Mag_Unified();
+Adafruit_LSM303_Mag_Unified MagSensor = Adafruit_LSM303_Mag_Unified(1);
+Adafruit_LSM303_Accel_Unified AccelSensor = Adafruit_LSM303_Accel_Unified(54321);
 
 // DEFINE SERVOS
 Servo sailServo;
@@ -49,11 +50,6 @@ float rAverage = 0;
 
 const int magNumReadings = 15;
 
-int magxReadings[magNumReadings]; // magnetometer x
-int magxReadIndex = 0;
-float magxTotal = 0;
-float magxAverage = 0;
-
 int magyReadings[magNumReadings]; // magnetometer y
 int magyReadIndex = 0;
 float magyTotal = 0;
@@ -71,6 +67,7 @@ int calcSailServo();
 void updateSwitches();
 void calcWindData();
 void getCompassDir();
+void getHeelingAngle();
 int bearAway(float amount);
 int luffUp(float amount);
 int calcMagY(int data);
@@ -248,18 +245,10 @@ void loop()
   else if (switch_A == 1)
   { // MANUAL MODE
     calcWindData();
+    getCompassDir();
+    getHeelingAngle();
     sailServo.write(calcSailServo());
     rudderServo.write(calcRudderServo());
-    calcWindData();
-    Serial.print("windDirection: ");
-    Serial.println(windDirection);
-    Serial.print("windSide: ");
-    Serial.println(windSide);
-    Serial.print("RudderServo: ");
-    Serial.println(calcRudderServo());
-
-    Serial.print("SailServo: ");
-    Serial.println(calcSailServo());
 
     Serial.println("----");
     Serial.println("----");
@@ -335,6 +324,36 @@ void getCompassDir()
   }
   Serial.print("Compass Heading: ");
   Serial.println(heading);
+}
+
+void getHeelingAngle()
+{ // get accelsensor data
+  sensors_event_t event;
+  AccelSensor.getEvent(&event);
+  // TODO: Figure out how to get sensor working
+  Serial.print("X: ");
+  Serial.print(event.acceleration.x);
+  Serial.print("  ");
+  Serial.print("Y: ");
+  Serial.print(event.acceleration.y);
+  Serial.print("  ");
+  Serial.print("Z: ");
+  Serial.print(event.acceleration.z);
+  Serial.print("  ");
+  Serial.println("m/s^2 ");
+
+  /* Note: You can also get the raw (non unified values) for */
+  /* the last data sample as follows. The .getEvent call populates */
+  /* the raw values used below. */
+  Serial.print("X Raw: ");
+  Serial.print(AccelSensor.raw.x);
+  Serial.print("  ");
+  Serial.print("Y Raw: ");
+  Serial.print(AccelSensor.raw.y);
+  Serial.print("  ");
+  Serial.print("Z Raw: ");
+  Serial.print(AccelSensor.raw.z);
+  Serial.println("");
 }
 
 int luffUp(float amount)
