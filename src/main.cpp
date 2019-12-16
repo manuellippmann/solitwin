@@ -26,6 +26,7 @@ int switch_A_data;
 int switch_D_data;
 int switch_A;
 int switch_D;
+int tempSwitch;
 float xData, yData, zData, windDirection;
 char windSide;
 float heading;
@@ -289,6 +290,16 @@ void updateSwitches()
   if (switch_A_data > 500)
   {
     switch_A = 0;
+
+    throttleSensData = (pulseIn(sailIn, HIGH)) - 1000;
+    if (throttleSensData > 400)
+    {
+      tempSwitch = 0;
+    }
+    else if (throttleSensData < 400)
+    {
+      tempSwitch = 1;
+    }
   }
   else if (switch_A_data < 150)
   {
