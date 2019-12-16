@@ -9,7 +9,6 @@
 
 // DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
-Adafruit_LSM303_Mag_Unified MagSensor = Adafruit_LSM303_Mag_Unified(1);
 Adafruit_LSM303_Accel_Unified AccelSensor = Adafruit_LSM303_Accel_Unified(54321);
 LSM303 compass;
 
@@ -91,7 +90,7 @@ int calcMagZ(int data);
 void setup()
 {
   // INIT SERIAL TO DEBUG
-  Serial.begin(9600);
+  Serial.begin(115200);
   // INIT DATA IN
   pinMode(sailIn, INPUT);
   pinMode(rudderIn, INPUT);
@@ -100,9 +99,14 @@ void setup()
   // INIT SERVOS
   sailServo.attach(sailOut);
   rudderServo.attach(rudderOut);
-  // INIT WINDSENSOR
-  WindSensor.begin();
+  // INIT SENOSRS
 
+  if (!WindSensor.begin())
+  {
+
+    while (1)
+      ;
+  }
   if (!AccelSensor.begin())
   {
 
@@ -120,6 +124,14 @@ void setup()
   {
     sReadings[thisReading] = 0;
     rReadings[thisReading] = 0;
+  }
+
+  for (int thisReading = 0; thisReading < magNumReadings; thisReading++)
+  {
+    magyReadings[thisReading] = 0;
+    magzReadings[thisReading] = 0;
+    compReadings[thisReading] = 0;
+    accReadings[thisReading] = 0;
   }
 }
 
@@ -444,7 +456,7 @@ int calcSailServo()
 
   sAverage = sTotal / numReadings;
   // return data to set servo, limit between 0 and 180 deg
-  return constrain(sAverage, 0, 180);
+  return constrain(sAverage, 0, 90);
 }
 
 int calcRudderServo()
