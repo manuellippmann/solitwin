@@ -4,12 +4,14 @@
 #include <Wire.h>
 #include <Adafruit_MLX90393.h>
 #include <Adafruit_Sensor.h>
+#include <Adafruit_LSM303_Accel.h>
 #include <LSM303.h>
 
 // DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
 Adafruit_LSM303_Mag_Unified MagSensor = Adafruit_LSM303_Mag_Unified(1);
 Adafruit_LSM303_Accel_Unified AccelSensor = Adafruit_LSM303_Accel_Unified(54321);
+LSM303 compass;
 
 // DEFINE SERVOS
 Servo sailServo;
@@ -26,6 +28,7 @@ int switch_A;
 int switch_D;
 float xData, yData, zData, windDirection;
 char windSide;
+float heading;
 float hValue;
 
 // I/O DECLARATIONS
@@ -61,6 +64,11 @@ int magzReadIndex = 0;
 float magzTotal = 0;
 float magzAverage = 0;
 
+int compReadings[magNumReadings]; // compass
+int compReadIndex = 0;
+float compTotal = 0;
+float compAverage = 0;
+
 int accReadings[magNumReadings]; // acceleration
 int accReadIndex = 0;
 float accTotal = 0;
@@ -72,6 +80,7 @@ int calcRudderServo();
 int calcSailServo();
 void updateSwitches();
 void calcWindData();
+float getCompassDir();
 float getHeelingAngle();
 int bearAway(float amount);
 int luffUp(float amount);
@@ -99,6 +108,12 @@ void setup()
     while (1)
       ;
   }
+
+  compass.init();
+  compass.enableDefault();
+  compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
+  compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
+
   //INIT SMOOTHING
   for (int thisReading = 0; thisReading < numReadings; thisReading++)
   {
@@ -317,24 +332,27 @@ void calcWindData()
   windDirection = (1 - ((windDirection - 560) / 715)) * 180;
 };
 
-void getCompassDir()
+float getCompassDir()
 {
-  // get magsensor data
-  sensors_event_t event;
-  MagSensor.getEvent(&event);
+  // get data from sensor
+  compass.read();
 
-  float Pi = 3.14159;
+  heading = compass.heading();
 
-  // Calculate the angle of the vector y,x
-  float heading = (atan2(event.magnetic.y, event.magnetic.x) * 180) / Pi;
+  // smooth data, the last 15 values are added and a median is found
+  compTotal = compTotal - compReadings[compReadIndex];
+  compReadings[compReadIndex] = heading;
+  compTotal = compTotal + compReadings[compReadIndex];
+  compReadIndex = compReadIndex + 1;
 
-  // Normalize to 0-360
-  if (heading < 0)
+  if (compReadIndex >= magNumReadings)
   {
-    heading = 360 + heading;
+    compReadIndex = 0;
   }
-  Serial.print("Compass Heading: ");
-  Serial.println(heading);
+
+  compAverage = compTotal / magNumReadings;
+  // return data
+  return compAverage;
 }
 
 float getHeelingAngle()
