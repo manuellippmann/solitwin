@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_MLX90393.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303_U.h>
+#include <LSM303.h>
 
 // DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
@@ -26,6 +26,7 @@ int switch_A;
 int switch_D;
 float xData, yData, zData, windDirection;
 char windSide;
+float hValue;
 
 // I/O DECLARATIONS
 int sailIn = 9;
@@ -60,14 +61,18 @@ int magzReadIndex = 0;
 float magzTotal = 0;
 float magzAverage = 0;
 
+int accReadings[magNumReadings]; // acceleration
+int accReadIndex = 0;
+float accTotal = 0;
+float accAverage = 0;
+
 // FUCTION DECLARATIONS
 
 int calcRudderServo();
 int calcSailServo();
 void updateSwitches();
 void calcWindData();
-void getCompassDir();
-void getHeelingAngle();
+float getHeelingAngle();
 int bearAway(float amount);
 int luffUp(float amount);
 int calcMagY(int data);
@@ -88,6 +93,12 @@ void setup()
   // INIT WINDSENSOR
   WindSensor.begin();
 
+  if (!AccelSensor.begin())
+  {
+
+    while (1)
+      ;
+  }
   //INIT SMOOTHING
   for (int thisReading = 0; thisReading < numReadings; thisReading++)
   {
@@ -326,34 +337,29 @@ void getCompassDir()
   Serial.println(heading);
 }
 
-void getHeelingAngle()
+float getHeelingAngle()
 { // get accelsensor data
   sensors_event_t event;
   AccelSensor.getEvent(&event);
-  // TODO: Figure out how to get sensor working
-  Serial.print("X: ");
-  Serial.print(event.acceleration.x);
-  Serial.print("  ");
-  Serial.print("Y: ");
-  Serial.print(event.acceleration.y);
-  Serial.print("  ");
-  Serial.print("Z: ");
-  Serial.print(event.acceleration.z);
-  Serial.print("  ");
-  Serial.println("m/s^2 ");
+  hValue = event.acceleration.y;
 
-  /* Note: You can also get the raw (non unified values) for */
-  /* the last data sample as follows. The .getEvent call populates */
-  /* the raw values used below. */
-  Serial.print("X Raw: ");
-  Serial.print(AccelSensor.raw.x);
-  Serial.print("  ");
-  Serial.print("Y Raw: ");
-  Serial.print(AccelSensor.raw.y);
-  Serial.print("  ");
-  Serial.print("Z Raw: ");
-  Serial.print(AccelSensor.raw.z);
-  Serial.println("");
+  // smooth data, the last 15 values are added and a median is found
+  accTotal = accTotal - accReadings[accReadIndex];
+  accReadings[accReadIndex] = hValue;
+  accTotal = accTotal + accReadings[accReadIndex];
+  accReadIndex = accReadIndex + 1;
+
+  if (accReadIndex >= magNumReadings)
+  {
+    accReadIndex = 0;
+  }
+
+  accAverage = accTotal / magNumReadings;
+  accAverage = accAverage - 3;
+
+  // accAverage is up to -10 heeling left, is up to 6.3 heeling right
+  // return data
+  return accAverage;
 }
 
 int luffUp(float amount)
