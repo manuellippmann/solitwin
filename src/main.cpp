@@ -150,154 +150,27 @@ void loop()
   if (switch_A == 0)
   { // AUTONOMOUS SECTION
     calcWindData();
-    if (switch_D == 0)
-    { // AM WIND
-      if (windDirection > 30 && windDirection < 60)
-      {
-        rudderServo.write(98); // center rudder
-        sailServo.write(50);   // TODO: CHECK SAIL SERVO VALUES!!!
 
-        Serial.println("Am Wind SRAIGHT");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
+    if (switch_D == 0 && tempSwitch == 0)
+      {
+      course = 1; //"closeHauled"
+      navigate(-5);
       }
-
-      if (windDirection < 30)
+    else if (switch_D == 1 && tempSwitch == 0)
       {
-        sailServo.write(50); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(bearAway((30 - windDirection) / 30));
-
-        Serial.println("Am Wind BEARING AWAY");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((40 - windDirection) / 40);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
+      course = 2; //"beamReach"
+      navigate(-5);
       }
-      else if (windDirection > 63)
+    else if (switch_D == 2 && tempSwitch == 0)
       {
-        sailServo.write(53); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(luffUp((windDirection - 63) / 57));
-
-        Serial.println("Am Wind LUFFING UP");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((windDirection - 75) / 105);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
-      };
+      course = 3; //"broadReach"
+      navigate(-5);
+      }
     }
-    else if (switch_D == 1)
-    { // HALBWIND
-      if (windDirection > 85 && windDirection < 100)
-      {
-        rudderServo.write(98);
-        sailServo.write(60); // TODO: CHECK SAIL SERVO VALUES!!!
-
-        Serial.println("Halb Wind Straight");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("----");
-        Serial.println("----");
-      }
-
-      if (windDirection < 85)
-      {
-        sailServo.write(58); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(bearAway((85 - windDirection) / 85));
-
-        Serial.println("Halb Wind BEAR AWAY");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((85 - windDirection) / 85);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
-      }
-      else if (windDirection > 100)
-      {
-        sailServo.write(62); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(luffUp((windDirection - 100) / 80));
-
-        Serial.println("Halb Wind LUFF UP");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((windDirection - 100) / 80);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
-      };
-    }
-    else if (switch_D == 2)
-    { // RAUMWIND
-      if (windDirection > 105 && windDirection < 165)
-      {
-        rudderServo.write(98);
-        sailServo.write(70); // TODO: CHECK SAIL SERVO VALUES!!!
-
-        Serial.println("Raum Wind Straight");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("----");
-        Serial.println("----");
-      }
-
-      if (windDirection < 105)
-      {
-        sailServo.write(68); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(bearAway((105 - windDirection) / 105));
-
-        Serial.println("Raum Wind BEAR AWAY");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((105 - windDirection) / 105);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
-      }
-      else if (windDirection > 165)
-      {
-        sailServo.write(72); // TODO: CHECK SAIL SERVO VALUES!!!
-        rudderServo.write(luffUp((windDirection - 165) / 15));
-
-        Serial.println("Raum Wind LUFF UP");
-        Serial.println("Wind Direction: ");
-        Serial.print(windDirection);
-        Serial.println("Wind Direction Value: ");
-        Serial.print((windDirection - 165) / 15);
-        Serial.println("Wind Side: ");
-        Serial.print(windSide);
-        Serial.println("----");
-        Serial.println("----");
-      };
-    }
-  }
   else if (switch_A == 1)
   { // MANUAL MODE
-    calcWindData();
-    getCompassDir();
-    getHeelingAngle();
     sailServo.write(calcSailServo());
     rudderServo.write(calcRudderServo());
-
-    Serial.println("----");
-    Serial.println("----");
   }
 };
 
