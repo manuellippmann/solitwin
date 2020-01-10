@@ -87,6 +87,7 @@ int bearAway(float amount);
 int luffUp(float amount);
 int calcMagY(int data);
 int calcMagZ(int data);
+int calcRudderAmp(int heading);
 int calcSailAngle();
 
 void setup()
@@ -422,18 +423,43 @@ int luffUp(float amount)
   return servoData;
 }
 
-int bearAway(float amount)
+int calcRudderAmp(int heading) // calc the rudder position according to desired compass heading
 {
-  // amount is between 0 and 1
-  int servoData;
-  //check which side the wind is coming from to determine which direction bearing away is
+  float servoValue; // define calculation parameters
+  int rudderThreshold;
+  int rudderCenter;
+  int currentHeel;
+
+  rudderThreshold = 5;
+  rudderCenter = 98; // servo position of rudder in center
+
+  currentHeel = getHeelingAngle();
+
+  if (currentHeading >= heading - rudderThreshold && currentHeading <= heading + rudderThreshold) // if currentHeading is +-rudderThreshold from desired heading (GO STRAIGHT)
+{
   if (windSide == 's')
-  { //wind from starbord
-    servoData = 98 + (32 * amount);
+    {                                              //wind from starbord
+      servoValue = rudderCenter - currentHeel * 2; // include heelingAngle to compensate force of heel (helps going straight);
   }
   else if (windSide == 'b')
   { //wind from port
-    servoData = 98 - (43 * amount);
+      servoValue = rudderCenter + currentHeel * 2;
+    }
+  }
+
+  else if (currentHeading < heading - rudderThreshold) // if currentHeading is smaller than desired heading (TURN BOAT RIGHT)
+  {
+    servoValue = rudderCenter - abs(heading - currentHeading);
+    servoValue = constrain(servoValue, 55, 98);
+  }
+
+  else if (currentHeading > heading + rudderThreshold) // if currentHeading is greater than desired heading (TURN BOAT LEFT)
+  {
+    servoValue = rudderCenter + abs(currentHeading - heading);
+    servoValue = constrain(servoValue, 98, 130);
+  }
+
+  return servoValue;
   }
 
 int calcSailAngle() // calculate position of sailServo according to a logistic equotation.
