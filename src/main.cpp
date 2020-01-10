@@ -45,6 +45,7 @@ int switch_D_In = 12;
 // SMOOTHING DECLARATIONS
 const int numReadings = 11;
 
+// TODO: REMOVE FLOATS FROM SMOOTHING OPERATIONS
 int sReadings[numReadings]; // sail
 int sReadIndex = 0;
 float sTotal = 0;
@@ -85,8 +86,6 @@ void updateSwitches();
 void calcWindData();
 float getCompassDir();
 float getHeelingAngle();
-int bearAway(float amount);
-int luffUp(float amount);
 int calcMagY(int data);
 int calcMagZ(int data);
 void navigate(int wantedheading);
@@ -109,13 +108,11 @@ void setup()
 
   if (!WindSensor.begin())
   {
-
     while (1)
       ;
   }
   if (!AccelSensor.begin())
   {
-
     while (1)
       ;
   }
@@ -152,21 +149,21 @@ void loop()
     calcWindData();
 
     if (switch_D == 0 && tempSwitch == 0)
-      {
+    {
       course = 1; //"closeHauled"
       navigate(-5);
-      }
+    }
     else if (switch_D == 1 && tempSwitch == 0)
-      {
+    {
       course = 2; //"beamReach"
       navigate(-5);
-      }
+    }
     else if (switch_D == 2 && tempSwitch == 0)
-      {
+    {
       course = 3; //"broadReach"
       navigate(-5);
-      }
     }
+  }
   else if (switch_A == 1)
   { // MANUAL MODE
     sailServo.write(calcSailServo());
@@ -280,6 +277,10 @@ float getHeelingAngle()
 
   // accAverage is up to -10 heeling left, is up to 6.3 heeling right
   // return data
+
+  accAverage = abs(accAverage);
+  accAverage = constrain(accAverage, 0, 5);
+
   return accAverage;
 }
 
@@ -323,13 +324,13 @@ void navigate(int wantedHeading)
       }
     }
     else if (windDirection > windAngle + 5) // if windDirection is greater than desired (LUFF UP)
-{
-  if (windSide == 's')
-  { //wind from starbord
+    {
+      if (windSide == 's')
+      { //wind from starbord
         rudderServo.write(calcRudderAmp((windDirection - windAngle) + currentHeading));
-  }
-  else if (windSide == 'b')
-  { //wind from port
+      }
+      else if (windSide == 'b')
+      { //wind from port
         rudderServo.write(calcRudderAmp((windDirection - windAngle) - currentHeading));
       }
     }
@@ -350,13 +351,13 @@ int calcRudderAmp(int heading) // calc the rudder position according to desired 
   currentHeel = getHeelingAngle();
 
   if (currentHeading >= heading - rudderThreshold && currentHeading <= heading + rudderThreshold) // if currentHeading is +-rudderThreshold from desired heading (GO STRAIGHT)
-{
-  if (windSide == 's')
+  {
+    if (windSide == 's')
     {                                              //wind from starbord
       servoValue = rudderCenter - currentHeel * 2; // include heelingAngle to compensate force of heel (helps going straight);
-  }
-  else if (windSide == 'b')
-  { //wind from port
+    }
+    else if (windSide == 'b')
+    { //wind from port
       servoValue = rudderCenter + currentHeel * 2;
     }
   }
@@ -374,7 +375,7 @@ int calcRudderAmp(int heading) // calc the rudder position according to desired 
   }
 
   return servoValue;
-  }
+}
 
 int calcSailAngle() // calculate position of sailServo according to a logistic equotation.
 // This equotation represents the correct positon of the sails according to the current windDirection
@@ -409,7 +410,7 @@ int calcSailServo()
   }
 
   sAverage = sTotal / numReadings;
-  // return data to set servo, limit between 0 and 180 deg
+  // return data to set servo, limit between 0 and 90 deg
   return constrain(sAverage, 0, 90);
 }
 
