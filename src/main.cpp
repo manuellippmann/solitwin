@@ -31,6 +31,8 @@ float xData, yData, zData, windDirection;
 char windSide;
 float heading;
 float hValue;
+int currentHeading;
+int course;
 
 // I/O DECLARATIONS
 int sailIn = 9;
@@ -87,6 +89,7 @@ int bearAway(float amount);
 int luffUp(float amount);
 int calcMagY(int data);
 int calcMagZ(int data);
+void navigate(int wantedheading);
 int calcRudderAmp(int heading);
 int calcSailAngle();
 
@@ -142,6 +145,7 @@ void loop()
 {
   // check for receiver values and set current switch positions
   updateSwitches();
+  currentHeading = getCompassDir();
 
   if (switch_A == 0)
   { // AUTONOMOUS SECTION
@@ -406,21 +410,58 @@ float getHeelingAngle()
   return accAverage;
 }
 
-int luffUp(float amount)
+void navigate(int wantedHeading)
 {
-  // amount is between 0 and 1
-  int servoData;
-  //check which side the wind is coming from to determine which direction luffing up is
+  if (wantedHeading >= 0 && wantedHeading <= 360) // if a compass heading is set
+  {
+    rudderServo.write(calcRudderAmp(wantedHeading)); // steer heading
+  }
+  else // steer course to the wind
+  {
+    int windAngle;
+
+    switch (course) // set windAngle for course to the wind
+    {
+    case 1: //"closeHauled"
+      windAngle = 60;
+      break;
+    case 2: //"beamReach"
+      windAngle = 90;
+      break;
+    case 3: //"broadReach"
+      windAngle = 135;
+      break;
+    default:
+      break;
+    }
+    if (windDirection >= windAngle - 5 && windDirection <= windAngle + 5) // if windDirection is +-5 deg from desired windAngle (GO STRAIGHT)
+    {
+      rudderServo.write(calcRudderAmp(currentHeading));
+    }
+    else if (windDirection < windAngle - 5) // if windDirection is smaller than desired (BEAR AWAY)
+    {
+      if (windSide == 's')
+      { //wind from starbord
+        rudderServo.write(calcRudderAmp((windAngle - windDirection) - currentHeading));
+      }
+      else if (windSide == 'b')
+      { //wind from port
+        rudderServo.write(calcRudderAmp((windAngle - windDirection) + currentHeading));
+      }
+    }
+    else if (windDirection > windAngle + 5) // if windDirection is greater than desired (LUFF UP)
+{
   if (windSide == 's')
   { //wind from starbord
-    servoData = 98 - (43 * amount);
+        rudderServo.write(calcRudderAmp((windDirection - windAngle) + currentHeading));
   }
   else if (windSide == 'b')
   { //wind from port
-    servoData = 98 + (32 * amount);
+        rudderServo.write(calcRudderAmp((windDirection - windAngle) - currentHeading));
+      }
+    }
   }
-  // return number to set servo
-  return servoData;
+  sailServo.write(calcSailAngle());
 }
 
 int calcRudderAmp(int heading) // calc the rudder position according to desired compass heading
