@@ -6,6 +6,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM303_Accel.h>
 #include <LSM303.h>
+#include <math.h>
 
 // DEFINE SENSORS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
@@ -86,6 +87,7 @@ int bearAway(float amount);
 int luffUp(float amount);
 int calcMagY(int data);
 int calcMagZ(int data);
+int calcSailAngle();
 
 void setup()
 {
@@ -433,8 +435,20 @@ int bearAway(float amount)
   { //wind from port
     servoData = 98 - (43 * amount);
   }
-  // return number to set servo
-  return servoData;
+
+int calcSailAngle() // calculate position of sailServo according to a logistic equotation.
+// This equotation represents the correct positon of the sails according to the current windDirection
+{
+  float angle;
+  float servoValue;
+  float e;
+
+  e = exp(0.45 * (windDirection / 10));
+  angle = 105 / (1 + 0.01 * e);
+  angle = constrain(angle, 0, 100);
+  servoValue = ((1 - (angle / 100)) * 25) + 50;
+
+  return servoValue;
 }
 
 int calcSailServo()
