@@ -33,6 +33,8 @@ float heading;
 float hValue;
 int currentHeading;
 int course;
+int newHeading;
+unsigned long timeStamp;
 
 // I/O DECLARATIONS
 int sailIn = 9;
@@ -95,7 +97,7 @@ int calcSailAngle();
 void setup()
 {
   // INIT SERIAL TO DEBUG
-  Serial.begin(115200);
+  Serial.begin(9600);
   // INIT DATA IN
   pinMode(sailIn, INPUT);
   pinMode(rudderIn, INPUT);
@@ -119,6 +121,8 @@ void setup()
 
   compass.init();
   compass.enableDefault();
+  // compass.m_min = (LSM303::vector<int16_t>){-247, -644, -406};
+  // compass.m_max = (LSM303::vector<int16_t>){+278, +437, +14};
   compass.m_min = (LSM303::vector<int16_t>){-32767, -32767, -32767};
   compass.m_max = (LSM303::vector<int16_t>){+32767, +32767, +32767};
 
@@ -163,11 +167,52 @@ void loop()
       course = 3; //"broadReach"
       navigate(-5);
     }
+    else if (switch_D == 0 && tempSwitch == 1)
+    {
+      course = 3; //"go north"
+      navigate(10);
+  }
+
+    else if (switch_D == 1 && tempSwitch == 1)
+    {
+      course = 3; //"go east"
+      navigate(90);
+    }
+
+    else if (switch_D == 2 && tempSwitch == 1)
+    {
+      course = 3; //"go south"
+      navigate(180);
+    }
+
+    Serial.println("windDirection");
+    Serial.println(windDirection);
+    Serial.println("compassDirection");
+    Serial.println(currentHeading);
+    Serial.println("----");
+    Serial.println("----");
   }
   else if (switch_A == 1)
   { // MANUAL MODE
     sailServo.write(calcSailServo());
     rudderServo.write(calcRudderServo());
+
+    // Serial.println(calcSailServo());
+    // calcWindData();
+    // Serial.print("windDirection: ");
+    // Serial.println(windDirection);
+    // Serial.println("--");
+
+    // WIND SENSOR CALIBRATION:
+    // calcWindData();
+    // WindSensor.readData(&xData, &yData, &zData);
+    // Serial.print("windz: ");
+    // Serial.println(calcMagZ(zData));
+    // Serial.print("windy: ");
+    // Serial.println(calcMagY(yData));
+    // Serial.println("--");
+    // Serial.println(windDirection);
+    // Serial.println("--");
   }
 };
 
@@ -229,7 +274,7 @@ void calcWindData()
 
   // calculate wind direction between 0 deg and 180 deg, set to windDirection
   windDirection = calcMagZ(zData);
-  windDirection = (1 - ((windDirection - 560) / 715)) * 180;
+  windDirection = (1 - ((windDirection - 600) / 600)) * 180;
 };
 
 float getCompassDir()
@@ -237,7 +282,7 @@ float getCompassDir()
   // get data from sensor
   compass.read();
 
-  heading = compass.heading();
+  heading = compass.heading((LSM303::vector<int>){1, 0, 0});
 
   // smooth data, the last 15 values are added and a median is found
   compTotal = compTotal - compReadings[compReadIndex];
@@ -297,7 +342,7 @@ void navigate(int wantedHeading)
     switch (course) // set windAngle for course to the wind
     {
     case 1: //"closeHauled"
-      windAngle = 60;
+      windAngle = 50;
       break;
     case 2: //"beamReach"
       windAngle = 90;
@@ -348,32 +393,116 @@ int calcRudderAmp(int heading) // calc the rudder position according to desired 
   rudderThreshold = 5;
   rudderCenter = 98; // servo position of rudder in center
 
+  if (heading < 0) // normalize negative headings
+  {
+    heading = 360 + heading;
+  }
+  else if (heading > 360) // normalize headings above 360
+  {
+    heading = heading - 360;
+  }
+
+  // TODO: FIX function below: every thrirty seconds, it sets heading to 270 deg. why????
+
+  // if (windDirection < 30) // make boat tack against the wind, when heading === wind direction
+  // {
+  //   timeStamp = millis(); // timestamp the last call of this section
+
+  //   if (windSide == 's')
+  //   { //wind from starbord
+  //     heading = heading - (45 - windDirection);
+  //   }
+  //   else if (windSide == 'b')
+  //   { //wind from port
+  //     heading = heading + (45 - windDirection);
+  //   }
+
+  //   if (heading < 0)
+  //   {
+  //     heading = 360 + heading;
+  //   }
+  //   else if (heading > 360)
+  //   {
+  //     heading = heading - 360;
+  //   }
+
+  //   newHeading = heading;
+
+  //   Serial.print("timeStamp");
+  //   Serial.println(timeStamp);
+  //   Serial.print("newHeading");
+  //   Serial.println(newHeading);
+  // }
+  // else if (windDirection > 30 && timeStamp > 0) // if millis is defined
+  // {
+  //   heading = newHeading;
+  //   Serial.print("wait for it! ");
+  //   if ((millis() - timeStamp) > 30000) // every thirty seconds, switch direction
+  //   {
+  //     Serial.print("IF CHECKER ");
+  //     Serial.println((millis() - timeStamp));
+
+  //     Serial.print("MILLIS ");
+  //     Serial.println((millis()));
+
+  //     Serial.print("TIMESTAMP ");
+  //     Serial.println((timeStamp));
+  //     if (windSide == 's')
+  //     { //
+  //       newHeading = newHeading + 90;
+  //     }
+
+  //     if (windSide == 'b')
+  //     { //
+  //       newHeading = newHeading - 90;
+  //     }
+
+  //     if (newHeading < 0)
+  //     {
+  //       newHeading = 360 + newHeading;
+  //     }
+  //     else if (newHeading > 360)
+  //     {
+  //       newHeading = newHeading - 360;
+  //     }
+  //     Serial.print("newHeading ");
+  //     Serial.println(newHeading);
+  //     timeStamp = millis();
+  //   }
+  // }
+
   currentHeel = getHeelingAngle();
+
+  Serial.print("currentHeel: ");
+  Serial.println(currentHeel);
 
   if (currentHeading >= heading - rudderThreshold && currentHeading <= heading + rudderThreshold) // if currentHeading is +-rudderThreshold from desired heading (GO STRAIGHT)
   {
     if (windSide == 's')
-    {                                              //wind from starbord
-      servoValue = rudderCenter - currentHeel * 2; // include heelingAngle to compensate force of heel (helps going straight);
+    {                                          //wind from starbord
+      servoValue = rudderCenter - currentHeel; // include heelingAngle to compensate force of heel (helps going straight);
     }
     else if (windSide == 'b')
     { //wind from port
-      servoValue = rudderCenter + currentHeel * 2;
+      servoValue = rudderCenter + currentHeel;
     }
   }
-
+  // TODO: implement checking for which direction to turn, to acieve short angle (e.g. turn from 345deg currentheading to 010deg desiredheading in a right curve, not a left one. )
   else if (currentHeading < heading - rudderThreshold) // if currentHeading is smaller than desired heading (TURN BOAT RIGHT)
   {
     servoValue = rudderCenter - abs(heading - currentHeading);
-    servoValue = constrain(servoValue, 55, 98);
+    servoValue = constrain(servoValue, 55, rudderCenter);
   }
 
   else if (currentHeading > heading + rudderThreshold) // if currentHeading is greater than desired heading (TURN BOAT LEFT)
   {
     servoValue = rudderCenter + abs(currentHeading - heading);
-    servoValue = constrain(servoValue, 98, 130);
+    servoValue = constrain(servoValue, rudderCenter, 130);
   }
-
+  Serial.print("rudderAmp: ");
+  Serial.println(servoValue);
+  Serial.print("heading: ");
+  Serial.println(heading);
   return servoValue;
 }
 
@@ -387,7 +516,7 @@ int calcSailAngle() // calculate position of sailServo according to a logistic e
   e = exp(0.45 * (windDirection / 10));
   angle = 105 / (1 + 0.01 * e);
   angle = constrain(angle, 0, 100);
-  servoValue = ((1 - (angle / 100)) * 25) + 50;
+  servoValue = ((1 - (angle / 100)) * 30) + 60;
 
   return servoValue;
 }
@@ -411,7 +540,7 @@ int calcSailServo()
 
   sAverage = sTotal / numReadings;
   // return data to set servo, limit between 0 and 90 deg
-  return constrain(sAverage, 0, 90);
+  return constrain(sAverage, 60, 90);
 }
 
 int calcRudderServo()
