@@ -26,7 +26,6 @@ int switch_A_data;
 int switch_D_data;
 int switch_A;
 int switch_D;
-int tempSwitch;
 float xData, yData, zData, windDirection;
 char windSide;
 float heading;
@@ -152,34 +151,19 @@ void loop()
   { // AUTONOMOUS SECTION
     calcWindData();
 
-    if (switch_D == 0 && tempSwitch == 0)
-    {
-      course = 1; //"closeHauled"
-      navigate(-5);
-    }
-    else if (switch_D == 1 && tempSwitch == 0)
-    {
-      course = 2; //"beamReach"
-      navigate(-5);
-    }
-    else if (switch_D == 2 && tempSwitch == 0)
-    {
-      course = 3; //"broadReach"
-      navigate(-5);
-    }
-    else if (switch_D == 0 && tempSwitch == 1)
+    if (switch_D == 0)
     {
       course = 3; //"go north"
       navigate(10);
   }
 
-    else if (switch_D == 1 && tempSwitch == 1)
+    else if (switch_D == 1)
     {
       course = 3; //"go east"
       navigate(90);
     }
 
-    else if (switch_D == 2 && tempSwitch == 1)
+    else if (switch_D == 2)
     {
       course = 3; //"go south"
       navigate(180);
@@ -224,17 +208,7 @@ void updateSwitches()
   if (switch_A_data > 500)
   {
     switch_A = 0;
-
-    throttleSensData = (pulseIn(sailIn, HIGH)) - 1000;
-    if (throttleSensData > 400)
-    {
-      tempSwitch = 0;
     }
-    else if (throttleSensData < 400)
-    {
-      tempSwitch = 1;
-    }
-  }
   else if (switch_A_data < 150)
   {
     switch_A = 1;
@@ -331,55 +305,23 @@ float getHeelingAngle()
 
 void navigate(int wantedHeading)
 {
-  if (wantedHeading >= 0 && wantedHeading <= 360) // if a compass heading is set
+  if (wantedHeading >= 0 && wantedHeading <= 359) // if a compass heading is set
   {
     rudderServo.write(calcRudderAmp(wantedHeading)); // steer heading
   }
-  else // steer course to the wind
+  else
   {
-    int windAngle;
+    if (heading < 0) // normalize negative headings
+    {
+      heading = 360 + heading;
+    }
+    else if (heading > 359) // normalize headings above 360
+    {
+      heading = heading - 360;
+    }
 
-    switch (course) // set windAngle for course to the wind
-    {
-    case 1: //"closeHauled"
-      windAngle = 50;
-      break;
-    case 2: //"beamReach"
-      windAngle = 90;
-      break;
-    case 3: //"broadReach"
-      windAngle = 135;
-      break;
-    default:
-      break;
-    }
-    if (windDirection >= windAngle - 5 && windDirection <= windAngle + 5) // if windDirection is +-5 deg from desired windAngle (GO STRAIGHT)
-    {
-      rudderServo.write(calcRudderAmp(currentHeading));
-    }
-    else if (windDirection < windAngle - 5) // if windDirection is smaller than desired (BEAR AWAY)
-    {
-      if (windSide == 's')
-      { //wind from starbord
-        rudderServo.write(calcRudderAmp((windAngle - windDirection) - currentHeading));
+    rudderServo.write(calcRudderAmp(wantedHeading)); // steer heading
       }
-      else if (windSide == 'b')
-      { //wind from port
-        rudderServo.write(calcRudderAmp((windAngle - windDirection) + currentHeading));
-      }
-    }
-    else if (windDirection > windAngle + 5) // if windDirection is greater than desired (LUFF UP)
-    {
-      if (windSide == 's')
-      { //wind from starbord
-        rudderServo.write(calcRudderAmp((windDirection - windAngle) + currentHeading));
-      }
-      else if (windSide == 'b')
-      { //wind from port
-        rudderServo.write(calcRudderAmp((windDirection - windAngle) - currentHeading));
-      }
-    }
-  }
   sailServo.write(calcSailAngle());
 }
 
@@ -391,16 +333,8 @@ int calcRudderAmp(int heading) // calc the rudder position according to desired 
   int currentHeel;
 
   rudderThreshold = 5;
-  rudderCenter = 98; // servo position of rudder in center
-
-  if (heading < 0) // normalize negative headings
-  {
-    heading = 360 + heading;
-  }
-  else if (heading > 360) // normalize headings above 360
-  {
-    heading = heading - 360;
-  }
+  rudderCenter = 98;         // servo position of rudder in center
+  servoValue = rudderCenter; // set value to center for edgecase
 
   // TODO: FIX function below: every thrirty seconds, it sets heading to 270 deg. why????
 
