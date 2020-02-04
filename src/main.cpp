@@ -8,7 +8,7 @@
 #include <LSM303.h>
 #include <math.h>
 
-// DEFINE SENSORS
+// CREATE SENSOR OBJECTS
 Adafruit_MLX90393 WindSensor = Adafruit_MLX90393();
 Adafruit_LSM303_Accel_Unified AccelSensor = Adafruit_LSM303_Accel_Unified(54321);
 LSM303 compass;
