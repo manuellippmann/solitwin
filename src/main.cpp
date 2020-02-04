@@ -421,14 +421,14 @@ int calcRudderAmp(int heading) // calc the rudder position according to desired 
       servoValue = rudderCenter + currentHeel;
     }
   }
-  // TODO: implement checking for which direction to turn, to acieve short angle (e.g. turn from 345deg currentheading to 010deg desiredheading in a right curve, not a left one. )
-  else if (currentHeading < heading - rudderThreshold) // if currentHeading is smaller than desired heading (TURN BOAT RIGHT)
+
+  else if (currentHeading < heading - rudderThreshold || currentHeading > 180 + heading) // if currentHeading is smaller than desired heading (TURN BOAT RIGHT)
   {
     servoValue = rudderCenter - abs(heading - currentHeading);
     servoValue = constrain(servoValue, 55, rudderCenter);
   }
 
-  else if (currentHeading > heading + rudderThreshold) // if currentHeading is greater than desired heading (TURN BOAT LEFT)
+  else if (currentHeading > heading + rudderThreshold || currentHeading < 180 - (360 - heading)) // if currentHeading is greater than desired heading (TURN BOAT LEFT)
   {
     servoValue = rudderCenter + abs(currentHeading - heading);
     servoValue = constrain(servoValue, rudderCenter, 130);
