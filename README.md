@@ -1,6 +1,6 @@
 # SY Solitwin - Codebase
 
-_This is the codebase for my autonomous sailboat project. Find out more: [Website](http://www.lippe-mann.de/solitwin) - [Solitwin on Instagram](https://www.instagram.com/sy_solitwin/)_
+_This is the codebase for my autonomous sailboat project. Find out more: [Website](http://www.lippe-mann.de/solitwin) - [Instagram](https://www.instagram.com/sy_solitwin/)_
 
 #### What is this about?
 
